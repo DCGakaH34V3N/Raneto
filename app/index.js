@@ -136,7 +136,6 @@ function initialize(config) {
     connectSrc: ["'self'"],
     frameSrc: ["'none'"],
     objectSrc: ["'none'"],
-    upgradeInsecureRequests: [],
   };
 
   if (config.google_analytics_id) {
@@ -194,7 +193,7 @@ function initialize(config) {
         saveUninitialized: false,
         cookie: {
           maxAge: COOKIE_MAX_AGE_MS,
-          secure: process.env.NODE_ENV === 'production',
+          secure: 'auto',
           httpOnly: true,
           sameSite: 'Lax',
         },

@@ -11,6 +11,7 @@ INSTALL_MARKER="$RUNTIME_DIR/npm-install.complete"
 ACTION="start"
 BIND_ADDRESS="${ADDRESS:-0.0.0.0}"
 PORT_NUMBER="${PORT:-9490}"
+INSTALL_NODE=0
 
 usage() {
   cat <<'EOF'
@@ -23,6 +24,7 @@ Options:
   --port PORT       Listening port (default: 9490)
   --bind ADDRESS    Listening address (default: 0.0.0.0)
   --local           Listen on 127.0.0.1 only
+  --install-node    Install Node.js 24 from NodeSource when required
   -h, --help        Show this help
 
 Environment variables such as SESSION_SECRET, ADMIN_USERNAME,
@@ -55,6 +57,10 @@ while (($#)); do
       ;;
     --local)
       BIND_ADDRESS="127.0.0.1"
+      shift
+      ;;
+    --install-node)
+      INSTALL_NODE=1
       shift
       ;;
     -h|--help)
@@ -91,23 +97,56 @@ running_pid() {
   printf '%s' "$pid"
 }
 
-check_runtime() {
-  command -v node >/dev/null 2>&1 || die "Node.js is not installed; install Node.js 24 first"
-  command -v npm >/dev/null 2>&1 || die "npm is not installed; install npm 11.9 or newer"
-
+runtime_is_supported() {
+  command -v node >/dev/null 2>&1 || return 1
+  command -v npm >/dev/null 2>&1 || return 1
   local node_version node_major node_minor npm_version npm_major npm_minor
   node_version="$(node --version)"
   node_version="${node_version#v}"
   IFS=. read -r node_major node_minor _ <<<"$node_version"
-  if ((node_major < 23 || (node_major == 23 && node_minor < 14))); then
-    die "Node.js $node_version is too old; this project requires >=23.14.0 (Node.js 24 recommended)"
-  fi
+  ((node_major > 23 || (node_major == 23 && node_minor >= 14))) || return 1
 
   npm_version="$(npm --version)"
   IFS=. read -r npm_major npm_minor _ <<<"$npm_version"
-  if ((npm_major < 11 || (npm_major == 11 && npm_minor < 9))); then
-    die "npm $npm_version is too old; this project requires >=11.9.0"
+  ((npm_major > 11 || (npm_major == 11 && npm_minor >= 9))) || return 1
+}
+
+install_node() {
+  [[ "$(uname -s)" == "Linux" ]] || die "automatic Node.js installation is supported on Ubuntu only"
+  [[ -r /etc/os-release ]] || die "cannot identify the operating system"
+  # shellcheck disable=SC1091
+  source /etc/os-release
+  [[ "${ID:-}" == "ubuntu" ]] || die "automatic Node.js installation supports Ubuntu only (detected: ${ID:-unknown})"
+
+  local -a sudo_cmd=()
+  if ((EUID != 0)); then
+    command -v sudo >/dev/null 2>&1 || die "sudo is required to install Node.js 24"
+    sudo_cmd=(sudo)
   fi
+
+  echo "Installing Node.js 24 from NodeSource..."
+  "${sudo_cmd[@]}" apt-get update
+  "${sudo_cmd[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl gnupg
+  curl --fail --silent --show-error --location \
+    https://deb.nodesource.com/setup_24.x -o "$RUNTIME_DIR/nodesource-setup.sh"
+  "${sudo_cmd[@]}" bash "$RUNTIME_DIR/nodesource-setup.sh"
+  "${sudo_cmd[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
+  hash -r
+}
+
+check_runtime() {
+  if ! runtime_is_supported; then
+    if ((INSTALL_NODE == 1)); then
+      install_node
+    else
+      local node_version="not installed" npm_version="not installed"
+      command -v node >/dev/null 2>&1 && node_version="$(node --version)"
+      command -v npm >/dev/null 2>&1 && npm_version="$(npm --version)"
+      die "unsupported runtime (Node.js $node_version, npm $npm_version); rerun with --install-node or install Node.js 24"
+    fi
+  fi
+
+  runtime_is_supported || die "Node.js installation completed, but Node.js >=23.14.0 and npm >=11.9.0 are not active"
 }
 
 install_dependencies() {

@@ -45,9 +45,10 @@ On Ubuntu, install Node.js 24 and npm 11.9 or newer, then run:
 
 ```bash
 chmod +x start-ubuntu.sh
-./start-ubuntu.sh start
+sudo ./start-ubuntu.sh start --install-node
 ```
 
+Omit `sudo` and `--install-node` when Node.js 24 is already installed.
 The default address is `0.0.0.0:9490`. Use `./start-ubuntu.sh --local` to
 listen locally, or pass `--bind` and `--port`. The script supports `start`,
 `stop`, `restart`, `status`, and `logs`; run `./start-ubuntu.sh --help` for
