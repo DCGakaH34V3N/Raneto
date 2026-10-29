@@ -11,8 +11,8 @@ RUN mkdir -p /opt/raneto/content && chown -R node:node /opt/raneto
 USER 1000
 
 # Copy package.json and install to cache
-COPY --chown=1000:1000 ./package.json .
-RUN npm install --omit=dev
+COPY --chown=1000:1000 ./package.json ./package-lock.json ./
+RUN npm ci --omit=dev
 
 COPY --chown=1000:1000 . .
 

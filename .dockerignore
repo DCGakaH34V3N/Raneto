@@ -10,4 +10,5 @@
 !app
 !config
 !package.json
+!package-lock.json
 !server.js
