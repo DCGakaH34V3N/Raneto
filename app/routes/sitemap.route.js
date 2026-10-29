@@ -40,7 +40,7 @@ function routeSitemap(config) {
       }
 
       const stream = new SitemapStream({
-        hostname: `https://${hostname}`,
+        hostname: `${req.protocol}://${hostname}`,
       });
       const xml = await streamToPromise(Readable.from(links).pipe(stream));
 

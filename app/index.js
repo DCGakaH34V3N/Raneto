@@ -152,6 +152,7 @@ function initialize(config) {
     helmet({
       contentSecurityPolicy: { directives: cspDirectives },
       crossOriginEmbedderPolicy: false,
+      strictTransportSecurity: false,
     }),
   );
   app.use(body_parser.json());
