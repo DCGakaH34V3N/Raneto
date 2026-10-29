@@ -39,6 +39,20 @@ Environment variables take the highest priority and override values set in `conf
 | `PORT`                | _(server)_            | Number  | Port to listen on (default: `8080`)                                         |
 | `HOST`                | _(server)_            | String  | Deprecated — use `ADDRESS` instead                                          |
 
+# Running without Docker
+
+On Ubuntu, install Node.js 24 and npm 11.9 or newer, then run:
+
+```bash
+chmod +x start-ubuntu.sh
+./start-ubuntu.sh start
+```
+
+The default address is `0.0.0.0:9490`. Use `./start-ubuntu.sh --local` to
+listen locally, or pass `--bind` and `--port`. The script supports `start`,
+`stop`, `restart`, `status`, and `logs`; run `./start-ubuntu.sh --help` for
+details.
+
 # License Report
 
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B44615%2Fgithub.com%2Fryanlelek%2FRaneto.svg?type=large&issueType=license)](https://app.fossa.com/projects/custom%2B44615%2Fgithub.com%2Fryanlelek%2FRaneto?ref=badge_large&issueType=license)
